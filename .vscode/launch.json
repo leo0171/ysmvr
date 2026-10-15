@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "Client",
+      "presentation": {
+        "group": "Mod Development - ysmvr",
+        "order": 0
+      },
+      "projectName": "ysmvr",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@${workspaceFolder}/build/moddev/clientRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@${workspaceFolder}/build/moddev/clientRunVmArgs.txt",
+        "-Dfml.modFolders\u003dysmvr%%${workspaceFolder}/bin/main"
+      ],
+      "cwd": "${workspaceFolder}\\run\\client",
+      "env": {
+        "MOD_CLASSES": "ysmvr%%${workspaceFolder}/bin/main"
+      },
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    }
+  ]
+}

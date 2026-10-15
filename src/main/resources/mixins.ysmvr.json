@@ -1,0 +1,23 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.elfmcys.ysmvr.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "MixinCustomPlayerRenderer",
+    "MixinCustomPlayerItemInHandLayer",
+    "MixinGuiHotbar",
+    "MixinLivingAnimatable",
+    "MixinVivecraftGuiLayer",
+    "MixinReplacePlayerHandRenderEvent",
+    "MixinRenderFirstPlayerBackground",
+    "MixinScreenInvoker",
+    "MixinAnimationRouletteScreen",
+    "MixinVRArmHelper",
+    "MixinVivecraftJointDir",
+    "MixinButtonVrchatStyle"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

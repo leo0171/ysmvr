@@ -1,0 +1,103 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev.legacyforge' version '2.0.146'
+}
+
+version = mod_version
+group = 'com.elfmcys.ysmvr'
+archivesBaseName = 'ysmvr'
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+repositories {
+    mavenCentral()
+    // 本地构建的 YSM 3.0 dev jar（modCompileOnly 不接受 files() 记法，需 flatDir）
+    flatDir {
+        dirs ysm_dev_libs
+    }
+}
+
+// Vivecraft API 编译期桩：只参与编译，不打进 jar（运行时使用 Vivecraft 本体提供的真实类）
+sourceSets {
+    stubs {
+        java.srcDir 'src/stubs/java'
+    }
+}
+
+
+def ysmDevJar = rootProject.file("${ysm_dev_libs}/${ysm_dev_jar_name}")
+def modernYsmDevJar = rootProject.file("${moderysm_dev_libs}/${moderysm_dev_jar_name}")
+
+dependencies {
+    // YSM 3.0：modCompileOnly + annotationProcessor（生成兼容性 checker 与扩展清单）
+    modCompileOnly 'com.elfmcys.ysm:ysm:3.0-dev-forge+mc1.20.1'
+    annotationProcessor files(ysmDevJar)
+
+    // ModernYSM 2.6.x（named 映射 dev jar，编译期引用 com.elfmcys.yesstevemodel 类）
+    compileOnly files(modernYsmDevJar)
+
+    // Vivecraft API 桩：仅编译期可见
+    compileOnly sourceSets.stubs.output
+}
+
+legacyForge {
+    version = "1.20.1-47.4.3"
+
+    parchment {
+        mappingsVersion = '+'
+        minecraftVersion = '1.20.1'
+    }
+
+    runs {
+        configureEach {
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+
+        client {
+            client()
+            gameDirectory = project.file('run/client')
+        }
+    }
+
+    mods {
+        ysmvr {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+// 桩源集只需要 MC 基础类，继承 moddev 的 clientLegacyClasspath（MC 客户端类路径）；
+// 不能继承主源集 compileClasspath（主源集又依赖桩输出，会成环）。
+configurations.stubsCompileClasspath.extendsFrom configurations.clientLegacyClasspath
+
+processResources {
+    inputs.property "mod_version", project.version
+    filteringCharset "UTF-8"
+
+    filesMatching("META-INF/mods.toml") {
+        expand "mod_version": project.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+// 强制 createMinecraftArtifacts 使用本地已有的 JDK 22（兼容 Java 21 任务）
+tasks.named('createMinecraftArtifacts') {
+    javaExecutable = java.util.Optional.ofNullable(
+        java.nio.file.Paths.get(System.getenv('JAVA_HOME') ?: 'C:/Program Files/BellSoft/LibericaJDK-22')
+    ).map { it.resolve('bin/java.exe') }
+     .filter { java.nio.file.Files.exists(it) }
+     .map { it.toString() }
+     .orElseThrow { new RuntimeException('JDK 22 not found for createMinecraftArtifacts') }
+}
+
+jar {
+    manifest.attributes([
+            "Implementation-Title"  : project.name,
+            "Implementation-Version": "${version}",
+            "MixinConfigs"          : "mixins.ysmvr.json"
+    ])
+}
+

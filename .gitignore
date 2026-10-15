@@ -1,0 +1,31 @@
+# ===== 构建产物 =====
+/build/
+/bin/
+/.gradle/
+*.class
+
+# ===== 误留在项目根的 jar 解包产物（非源码，可随时重新解包得到）=====
+/com/
+/META-INF/
+
+# ===== 开发运行目录（游戏实例、日志、存档）=====
+/run/
+
+# ===== 日志与崩溃转储 =====
+*.log
+hs_err_pid*.log
+replay_pid*.log
+
+# ===== IDE =====
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/settings.json
+
+# ===== 系统文件 =====
+Thumbs.db
+desktop.ini
+
+# ===== 本地构建日志 =====
+build_log.txt
