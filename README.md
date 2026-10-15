@@ -129,6 +129,8 @@ $env:GITHUB_TOKEN = '<你的 token>'
 
 本项目采用 **GNU Lesser General Public License v3.0 (LGPL-3.0)**。
 
+Copyright (C) 2026 ysmvr contributors。
+
 - 完整许可证见 [LICENSE](LICENSE)；
 - 第三方组件与归属见 [THIRD-PARTY.md](THIRD-PARTY.md)；
 - 本仓库不包含 Minecraft / Forge / Vivecraft / YSM / OpenYSM 本体或美术资源。
