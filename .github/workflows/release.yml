@@ -1,0 +1,80 @@
+name: release
+
+# 说明：本模组的编译依赖两个**平台 dev jar**（官方 YSM 3.0 dev jar、ModernYSM/OpenYSM dev jar），
+# 它们不在公共 Maven 上，也无法在 CI 中构建（官方 3.0 需要原生工具链），因此本工作流
+# **故意不执行 Gradle 构建**。它负责打 tag 时的自动化收尾：
+#   1) 校验 tag 与 gradle.properties 的 mod_version 一致（防止版本号写错）；
+#   2) 创建对应的 GitHub Release（-dev 后缀自动标为 prerelease，并生成变更说明）；
+#   3) 在 Release 正文追加「如何在本地构建并附加 jar」的说明。
+# jar 由维护者在本地构建后用 `gh release upload` 或网页附加。
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check tag matches mod_version
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME#v}"
+          VER="$(grep -E '^mod_version=' gradle.properties | head -n1 | cut -d= -f2 | tr -d ' \r')"
+          echo "tag=$TAG  mod_version=$VER"
+          if [ "$TAG" != "$VER" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} 与 gradle.properties 的 mod_version=${VER} 不一致；请修正版本号后重打 tag"
+            exit 1
+          fi
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          PRE=""
+          case "$TAG" in *-dev) PRE="--prerelease" ;; esac
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release $TAG already exists -> update title only"
+            gh release edit "$TAG" --title "ysmvr $TAG" $PRE
+          else
+            gh release create "$TAG" --title "ysmvr $TAG" --generate-notes $PRE
+          fi
+
+      - name: Append build instructions to release body
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          cat > /tmp/footer.md <<'FOOTER'
+
+          ---
+
+          ## 附件（jar）说明
+
+          本工作流不构建 jar。维护者请在本机（需要 JDK 17 + JDK 22，以及 README 中列出的两个平台 dev jar）执行：
+
+          ```powershell
+          cd <repo>
+          $env:JAVA_HOME = "C:\Program Files\BellSoft\LibericaJDK-22"
+          .\gradlew.bat build
+          gh release upload <tag> .\build\libs\ysmvr-<version>.jar
+          ```
+
+          或直接使用仓库内的 `scripts/release.ps1`（一条命令完成构建 / 提交 / 打 tag / 推送 / 建 Release / 上传 jar）。
+
+          CI 无法构建的原因：编译依赖官方 YSM 3.0 dev jar 与 ModernYSM/OpenYSM dev jar，
+          两者不在公共 Maven 上（官方 3.0 还需要原生工具链），详见 README 的「构建前置依赖」。
+          FOOTER
+          gh release view "$TAG" --json body -q .body > /tmp/body.md
+          cat /tmp/footer.md >> /tmp/body.md
+          gh release edit "$TAG" --notes-file /tmp/body.md

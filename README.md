@@ -110,6 +110,21 @@ mods 目录需要（二选一平台）：
 - 不包含 Minecraft / Forge / Vivecraft / YSM / OpenYSM 本体或美术资源；
 - 使用前请确认所安装的各个 mod 版本与上表兼容。
 
+## 发布新版本
+
+本仓库的 GitHub Actions（`.github/workflows/release.yml`）在推送 `v*` tag 时：
+校验 tag 与 `gradle.properties` 的 `mod_version` 一致，然后创建 Release（`-dev` 后缀自动标为 prerelease）。
+
+**它不构建 jar**：编译依赖两个平台 dev jar（见上文「构建前置依赖」），无法在 CI 中取得。
+jar 在本机构建后附加即可，推荐用仓库自带脚本一条命令完成：
+
+```powershell
+$env:GITHUB_TOKEN = '<你的 token>'
+.\scripts\release.ps1 -Version 0.3.34-dev -NotesFile .\release-notes.md
+```
+
+该脚本会依次：更新 `gradle.properties` → `gradlew build` → 提交 → 打 tag → 推送 → 创建 Release → 上传 jar（并打印 SHA256）。
+
 ## 许可证
 
 本项目采用 **GNU Lesser General Public License v3.0 (LGPL-3.0)**。
